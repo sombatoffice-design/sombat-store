@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sombat Store Admin - จัดการระบบหลังบ้าน</title>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Admin specific adjustments */
+    .admin-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background-color: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.5rem;
+    }
+    .table-container {
+      background-color: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-md);
+      overflow-x: auto;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 2rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+    th {
+      background-color: var(--light);
+      padding: 1rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--surface-border);
+    }
+    td {
+      padding: 1rem;
+      border-bottom: 1px solid var(--surface-border);
+      vertical-align: middle;
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.65rem;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-align: center;
+    }
+    .badge.pending { background-color: rgba(245, 158, 11, 0.15); color: var(--warning); }
+    .badge.processing { background-color: rgba(0, 85, 255, 0.15); color: var(--secondary); }
+    .badge.completed { background-color: rgba(16, 185, 129, 0.15); color: var(--success); }
+    .badge.cancelled { background-color: rgba(239, 68, 108, 0.15); color: var(--danger); }
+    
+    .admin-tabs {
+      display: flex;
+      border-bottom: 2px solid var(--surface-border);
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .admin-tab {
+      padding: 0.75rem 0.5rem;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: var(--transition);
+    }
+    .admin-tab:hover, .admin-tab.active {
+      color: var(--primary);
+    }
+    .admin-tab.active {
+      border-bottom-color: var(--primary);
+    }
+    
+    .admin-panel {
+      display: none;
+    }
+    .admin-panel.active {
+      display: block;
+    }
+    
+    .action-btn {
+      background: none;
+      border: 1px solid var(--surface-border);
+      padding: 0.4rem 0.6rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      transition: var(--transition);
+    }
+    .action-btn:hover {
+      background-color: var(--light);
+      border-color: var(--text-muted);
+    }
+    .action-btn.edit { color: var(--secondary); }
+    .action-btn.delete { color: var(--danger); }
+    
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Mobile Header -->
+  <div class="mobile-header">
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+      <button class="mobile-menu-toggle" id="mobile-menu-toggle"><i class="bx bx-menu"></i></button>
+      <div style="font-family: var(--font-heading); font-weight: 700; color: var(--dark); font-size: 1.15rem;">SOMBAT STORE</div>
+    </div>
+    <div style="font-size: 0.75rem; font-weight: 600; color: var(--primary); letter-spacing: 0.5px;">ADMIN</div>
+  </div>
+
+  <div class="admin-wrapper">
+    <!-- Left Sidebar Control Panel -->
+    <div class="sidebar" id="admin-sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo-icon">S</div>
+        <div class="sidebar-logo-text">
+          <span class="sidebar-logo-title">SOMBAT STORE</span>
+          <span class="sidebar-logo-sub">ระบบแผงจัดการหลังบ้าน</span>
+        </div>
+      </div>
+      <ul class="sidebar-menu">
+        <li class="sidebar-item active" data-tab="orders" id="menu-tab-orders">
+          <i class="bx bx-list-ol"></i>
+          <span>รายการสั่งซื้อ</span>
+        </li>
+        <li class="sidebar-item" data-tab="products" id="menu-tab-products">
+          <i class="bx bx-purchase-tag-alt"></i>
+          <span>จัดการสินค้าและบริการ</span>
+        </li>
+        <li class="sidebar-item" id="menu-trigger-settings">
+          <i class="bx bx-cog"></i>
+          <span>ตั้งค่าการเชื่อมโยงระบบ</span>
+        </li>
+      </ul>
+      <div class="sidebar-footer">
+        <button class="sidebar-footer-btn" id="open-storefront-btn-sidebar">
+          <i class="bx bx-link-external"></i> เปิดดูหน้าร้านค้า
+        </button>
+      </div>
+    </div>
+    
+    <!-- Sidebar Overlay for mobile -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+
+  <div class="container">
+
+    <!-- PANEL 1: ORDERS -->
+    <div class="admin-panel active" id="panel-orders">
+
+    <!-- Stat Summary row -->
+    <div class="admin-grid">
+      <div class="stat-card">
+        <div>
+          <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">ยอดสั่งซื้อทั้งหมด</div>
+          <div id="stat-total-sales" style="font-size: 1.75rem; font-weight: 700; color: var(--dark); margin-top: 0.25rem;">0.-</div>
+        </div>
+        <div class="stat-icon" style="background-color: rgba(16, 185, 129, 0.1); color: var(--success);"><i class="bx bx-dollar-circle"></i></div>
+      </div>
+      
+      <div class="stat-card">
+        <div>
+          <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">ออเดอร์ทั้งหมด</div>
+          <div id="stat-total-orders" style="font-size: 1.75rem; font-weight: 700; color: var(--dark); margin-top: 0.25rem;">0</div>
+        </div>
+        <div class="stat-icon" style="background-color: rgba(0, 85, 255, 0.1); color: var(--secondary);"><i class="bx bx-receipt"></i></div>
+      </div>
+      
+      <div class="stat-card">
+        <div>
+          <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">ออเดอร์รอค้างดำเนินการ</div>
+          <div id="stat-pending-orders" style="font-size: 1.75rem; font-weight: 700; color: var(--dark); margin-top: 0.25rem;">0</div>
+        </div>
+        <div class="stat-icon" style="background-color: rgba(245, 158, 11, 0.1); color: var(--warning);"><i class="bx bx-time-five"></i></div>
+      </div>
+      
+      <div class="stat-card">
+        <div>
+          <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">รายการสินค้า/บริการ</div>
+          <div id="stat-total-products" style="font-size: 1.75rem; font-weight: 700; color: var(--dark); margin-top: 0.25rem;">0</div>
+        </div>
+        <div class="stat-icon" style="background-color: rgba(239, 68, 68, 0.1); color: var(--danger);"><i class="bx bx-package"></i></div>
+      </div>
+    </div>
+      <div class="panel-header">
+        <h2>รายการใบสั่งซื้อและคำขอใบเสนอราคา</h2>
+        <button class="nav-btn" onclick="fetchAdminData()"><i class="bx bx-refresh"></i> รีเฟรชข้อมูล</button>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>เลขออเดอร์</th>
+              <th>วันที่สั่งซื้อ</th>
+              <th>ชื่อลูกค้า</th>
+              <th>เบอร์โทรศัพท์</th>
+              <th>ยอดสุทธิ (บาท)</th>
+              <th>สถานะ</th>
+              <th>การจัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="orders-table-body">
+            <tr>
+              <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 3rem;">กำลังโหลดข้อมูล...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PANEL 2: PRODUCTS -->
+    <div class="admin-panel" id="panel-products">
+      <div class="panel-header">
+        <h2>รายการสินค้าและบริการในระบบ</h2>
+        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+          <input type="text" class="form-input" id="admin-prod-search" placeholder="ค้นหาชื่อ/รหัสสินค้า..." style="max-width: 200px; padding: 0.4rem 0.8rem;">
+          <select class="form-input" id="admin-prod-filter-category" style="max-width: 160px; padding: 0.4rem 0.8rem;">
+            <option value="all">ทุกประเภทสินค้า</option>
+            <option value="กระดาษ">กระดาษ</option>
+            <option value="เครื่องเขียน">เครื่องเขียน</option>
+            <option value="ลวดเย็บ/เครื่องเย็บกระดาษ">เครื่องเย็บ</option>
+            <option value="เครื่องแต่งกายนักเรียน">ชุดนักเรียน</option>
+            <option value="สมุด / บิล / ใบเสร็จ">สมุด/บิล</option>
+            <option value="งานบริการ">งานบริการ</option>
+          </select>
+          <button class="nav-btn" id="add-product-btn"><i class="bx bx-plus"></i> เพิ่มสินค้าใหม่</button>
+        </div>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>รหัสสินค้า</th>
+              <th>รูปภาพ</th>
+              <th>หมวดหมู่</th>
+              <th>ชื่อรายการ</th>
+              <th>ราคา (บาท)</th>
+              <th>หน่วย</th>
+              <th>สต็อก</th>
+              <th>การจัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="products-table-body">
+            <tr>
+              <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 3rem;">กำลังโหลดข้อมูล...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+    </div> <!-- Close main-content -->
+  </div> <!-- Close admin-wrapper -->
+
+  <!-- API & Integration Settings Modal -->
+  <div class="modal-overlay" id="settings-modal">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="bx bx-cog"></i> ตั้งค่าการเชื่อมโยงระบบ (LINE & Google Sheets)</h3>
+        <button class="modal-close" id="settings-close"><i class="bx bx-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          คุณสามารถปรับเปลี่ยน Google Sheet และคีย์สำหรับการแจ้งเตือนไลน์ได้จากฟอร์มนี้ ข้อมูลจะบันทึกลงชีต Config โดยตรง
+        </p>
+        
+        <div class="form-group">
+          <label class="form-label">ลิงก์หน้าร้านค้าลูกค้า (Storefront URL) (ปล่อยว่างเพื่อตรวจจับอัตโนมัติ)</label>
+          <input type="text" class="form-input" id="storefront-url-input" placeholder="เช่น https://username.github.io/Sombat-Sale/">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Google Apps Script Web App URL *</label>
+          <input type="text" class="form-input" id="api-url-input" placeholder="https://script.google.com/macros/s/.../exec">
+        </div>
+        
+        <div style="border-top: 1px solid var(--surface-border); margin: 1.5rem 0; padding-top: 1rem;">
+          <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem; color: var(--primary);">การแจ้งเตือน Line Notify (ฟรีและง่ายที่สุด)</h4>
+          <div class="form-group">
+            <label class="form-label">Line Notify Token</label>
+            <input type="text" class="form-input" id="line-notify-token-input" placeholder="ใส่โทเค็น Line Notify ที่ออกสำหรับกลุ่มพนักงาน">
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid var(--surface-border); margin: 1.5rem 0; padding-top: 1rem;">
+          <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem; color: var(--secondary);">การแจ้งเตือน Line Messaging API (ไลน์บอททางการ)</h4>
+          <div class="form-group">
+            <label class="form-label">Line Channel Access Token</label>
+            <input type="text" class="form-input" id="line-bot-token-input" placeholder="Channel Access Token ของ Line Bot">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Line User ID / Group ID</label>
+            <input type="text" class="form-input" id="line-bot-userid-input" placeholder="ไอดีผู้ใช้ หรือ ไอดีกลุ่มไลน์พนักงานสำหรับรับแจ้งเตือน">
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+          <button class="btn-secondary" id="settings-cancel-btn">ยกเลิก</button>
+          <button class="nav-btn" id="settings-save-btn">บันทึกและซิงค์ข้อมูล</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Order Detail Modal -->
+  <div class="modal-overlay" id="order-detail-modal">
+    <div class="modal-content" style="max-width: 650px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="order-detail-title">รายละเอียดออเดอร์</h3>
+        <button class="modal-close" id="order-detail-close"><i class="bx bx-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; background-color: var(--light); padding: 1rem; border-radius: var(--radius-md);">
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight:600;">เลขออเดอร์:</span>
+            <div id="detail-id" style="font-weight: 700;">ORD-xxxx</div>
+          </div>
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight:600;">วันที่สั่งซื้อ:</span>
+            <div id="detail-date">-</div>
+          </div>
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight:600;">ชื่อลูกค้า:</span>
+            <div id="detail-name">-</div>
+          </div>
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight:600;">เบอร์โทรศัพท์:</span>
+            <div id="detail-phone">-</div>
+          </div>
+          <div style="grid-column: 1/-1;">
+            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight:600;">ที่อยู่จัดส่ง / หน้างาน:</span>
+            <div id="detail-address">-</div>
+          </div>
+          <div style="grid-column: 1/-1;">
+            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight:600;">หมายเหตุ / รายละเอียดบริการเพิ่มเติม:</span>
+            <div id="detail-notes" style="font-style: italic; color: var(--text-muted);">-</div>
+          </div>
+        </div>
+
+        <h4 style="margin-bottom: 0.75rem;">รายการสินค้าและบริการที่สั่ง</h4>
+        <div class="table-container" style="margin-bottom: 1.5rem;">
+          <table style="font-size: 0.85rem;">
+            <thead>
+              <tr>
+                <th>รหัสสินค้า</th>
+                <th>ชื่อสินค้า/บริการ</th>
+                <th style="text-align: right;">ราคาต่อหน่วย</th>
+                <th style="text-align: center;">จำนวน</th>
+                <th style="text-align: right;">รวม (บาท)</th>
+              </tr>
+            </thead>
+            <tbody id="detail-items-body">
+              <!-- Populated via JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--surface-border); padding-top: 1rem;">
+          <div class="form-group" style="margin-bottom: 0; width: 45%;">
+            <label class="form-label">อัปเดตสถานะการสั่งซื้อ</label>
+            <select class="form-input" id="update-status-select">
+              <option value="รอดำเนินการ">รอดำเนินการ</option>
+              <option value="กำลังดำเนินการ">กำลังดำเนินการ</option>
+              <option value="สำเร็จ">สำเร็จ</option>
+              <option value="ยกเลิก">ยกเลิก</option>
+            </select>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 0.8rem; color: var(--text-muted);">ราคารวมทั้งหมด:</div>
+            <div id="detail-grand-total" style="font-size: 1.5rem; font-weight: 800; color: var(--primary);">0.-</div>
+          </div>
+        </div>
+        
+        <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+          <button class="btn-secondary" id="order-detail-cancel">ปิดหน้าต่าง</button>
+          <button class="nav-btn" id="save-status-btn">บันทึกอัปเดตสถานะ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Product Modal -->
+  <div class="modal-overlay" id="product-modal">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="product-modal-title">เพิ่มสินค้าใหม่</h3>
+        <button class="modal-close" id="product-close"><i class="bx bx-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <form id="product-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">รหัสสินค้า / บริการ *</label>
+              <input type="text" class="form-input" id="prod-id" required placeholder="เช่น SA007 หรือ SERV005">
+            </div>
+            <div class="form-group">
+              <label class="form-label">หมวดหมู่ *</label>
+              <select class="form-input" id="prod-category" required>
+                <option value="กระดาษ">กระดาษ</option>
+                <option value="เครื่องเขียน">เครื่องเขียน</option>
+                <option value="ลวดเย็บ/เครื่องเย็บกระดาษ">ลวดเย็บ/เครื่องเย็บกระดาษ</option>
+                <option value="เครื่องแต่งกายนักเรียน">เครื่องแต่งกายนักเรียน</option>
+                <option value="สมุด / บิล / ใบเสร็จ">สมุด / บิล / ใบเสร็จ</option>
+                <option value="งานบริการ">งานบริการ</option>
+                <option value="สินค้าเบ็ดเตล็ด">สินค้าเบ็ดเตล็ด</option>
+                <option value="สินค้าอุปกรณ์กีฬา">สินค้าอุปกรณ์กีฬา</option>
+                <option value="สินค้าอุปกรณ์ IT">สินค้าอุปกรณ์ IT</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">ชื่อสินค้า / งานบริการ *</label>
+            <input type="text" class="form-input" id="prod-name" required placeholder="ชื่อรายการสินค้าหรือบริการ">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">รายละเอียด / คำอธิบายเพิ่มเติม</label>
+            <textarea class="form-textarea" id="prod-desc" placeholder="คำอธิบายรายละเอียด เช่น ขนาด, จำนวนต่อแพ็ค, รายละเอียดการรับประกัน"></textarea>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">ราคาขาย (บาท) * (กรอก 0 สำหรับขอใบเสนอราคา)</label>
+              <input type="number" class="form-input" id="prod-price" required min="0" value="0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">หน่วยนับ *</label>
+              <input type="text" class="form-input" id="prod-unit" required placeholder="เช่น ชิ้น, รีม, กล่อง, ตัว, ชุด, ตร.ม.">
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">จำนวนสต็อกสินค้า (ใส่ 999 สำหรับงานบริการ)</label>
+              <input type="number" class="form-input" id="prod-stock" required min="0" value="999">
+            </div>
+            <div class="form-group">
+              <label class="form-label">รูปภาพสินค้า (อัปโหลดรูปจากคอม/มือถือ)</label>
+              <input type="file" class="form-input" id="prod-image-file" accept="image/*">
+              <input type="hidden" id="prod-imageurl">
+            </div>
+          </div>
+
+          <!-- Product Image Thumbnail Preview -->
+          <div class="form-group" style="text-align: center;">
+            <div id="image-preview-container" style="display: none; margin-top: 0.5rem;">
+              <img id="prod-image-preview-element" src="" style="max-width: 100px; max-height: 100px; border-radius: 6px; border: 1px solid var(--surface-border); object-fit: cover;">
+              <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">ตัวอย่างภาพสินค้า (ย่อขนาดอัตโนมัติ)</div>
+            </div>
+          </div>
+          
+          <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+            <button type="button" class="btn-secondary" id="product-cancel-btn">ยกเลิก</button>
+            <button type="submit" class="nav-btn" id="save-product-submit-btn">บันทึกข้อมูลสินค้า</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Work Order Preview Modal (ใบสั่งงาน) -->
+  <div class="modal-overlay" id="work-order-modal">
+    <div class="modal-content work-order-modal" style="padding: 0;">
+      <!-- Action top bar controls -->
+      <div class="work-order-actions-bar">
+        <div class="work-order-actions-title">
+          <i class="bx bx-printer" style="font-size: 1.25rem; color: var(--primary);"></i>
+          <span>พรีวิวและพิมพ์ใบจัดเตรียมสินค้า / ใบเตรียมงาน</span>
+        </div>
+        <div class="work-order-actions-buttons">
+          <button class="nav-btn" id="work-order-print-btn" style="padding: 0.4rem 1rem; font-size: 0.85rem;">
+            <i class="bx bx-printer"></i> พิมพ์เอกสาร / บันทึกเป็น PDF
+          </button>
+          <button class="btn-secondary" id="work-order-close-btn" style="padding: 0.4rem 1rem; font-size: 0.85rem; background-color: #e2e8f0; color: #475569; border: 1px solid #cbd5e1; font-weight: 600; cursor: pointer;">
+            ปิดหน้าต่าง
+          </button>
+        </div>
+      </div>
+      
+      <!-- Printable Sheet Area -->
+      <div class="work-order-sheet" id="work-order-print-view">
+        <div class="work-order-sheet-header">
+          <div class="work-order-title-box">
+            <span class="work-order-sheet-company">บริษัท สมบัติ ซัพพลาย แอนด์ เซอร์วิส จำกัด</span>
+            <span class="work-order-sheet-title">ใบจัดเตรียมสินค้า / ใบเตรียมงาน (Work Order)</span>
+          </div>
+          <div class="work-order-sheet-meta">
+            <div>เลขที่เอกสาร: <span id="wo-id" style="font-weight:700;">ORD-xxxx</span></div>
+            <div style="margin-top: 0.25rem;">วันที่ออกเอกสาร: <span id="wo-date" style="font-weight:700;">-</span></div>
+          </div>
+        </div>
+        
+        <div class="work-order-sheet-section">
+          <div class="work-order-sheet-section-title">ข้อมูลลูกค้าและสถานที่จัดส่งงาน</div>
+          <div class="work-order-sheet-info-grid">
+            <div><strong>ชื่อลูกค้า:</strong> <span id="wo-customer-name">-</span></div>
+            <div><strong>เบอร์โทรศัพท์ติดต่อ:</strong> <span id="wo-customer-phone">-</span></div>
+            <div style="grid-column: 1/-1;"><strong>ที่อยู่จัดส่ง / หน้างานปฏิบัติการ:</strong> <span id="wo-customer-address">-</span></div>
+            <div style="grid-column: 1/-1;"><strong>หมายเหตุ / รายละเอียดสั่งเพิ่มเติม:</strong> <span id="wo-customer-notes" style="font-style: italic; color: #475569;">-</span></div>
+          </div>
+        </div>
+        
+        <div class="work-order-sheet-section">
+          <div class="work-order-sheet-section-title">รายการพัสดุและงานบริการที่ต้องเตรียม</div>
+          <table class="work-order-sheet-table">
+            <thead>
+              <tr>
+                <th class="work-order-sheet-checkbox">เตรียมแล้ว</th>
+                <th style="width: 15%;">รหัสพัสดุ</th>
+                <th style="text-align: left;">รายการพัสดุ / งานบริการ</th>
+                <th style="width: 10%; text-align: center;">จำนวน</th>
+                <th style="width: 12%; text-align: center;">หน่วยนับ</th>
+                <th style="width: 15%; text-align: right;">ราคา/หน่วย</th>
+                <th style="width: 15%; text-align: right;">ราคารวม (บาท)</th>
+              </tr>
+            </thead>
+            <tbody id="wo-table-body">
+              <!-- Rendered items will be appended here -->
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="work-order-sheet-signatures">
+          <div class="work-order-sheet-sig-box">
+            <div>ลงชื่อ...................................................... ผู้จัดเตรียมสินค้า</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">(พนักงานจัดเตรียมพัสดุ)</div>
+          </div>
+          <div class="work-order-sheet-sig-box">
+            <div>ลงชื่อ...................................................... ผู้ตรวจงาน / ผู้ส่งมอบ</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">(ผู้มีอำนาจตรวจสอบ / ผู้ตรวจสอบสินค้า)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Admin Script Logic -->
+  <script src="config.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
